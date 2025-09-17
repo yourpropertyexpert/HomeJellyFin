@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    user: 1000:1000
+    network_mode: 'host'
+    restart: unless-stopped
+    volumes:
+      - ./data/config:/config
+      - ./data/cache:/cache
+      - ./data/media:/media
+      - ./data/transcode:/transcode
+    environment:
+      - JELLYFIN_PublishedServerUrl=http://localhost:8096
+    devices:
+      - /dev/dri:/dev/dri  # For hardware acceleration (optional)
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+
+  # Init container to create directories
+  init-dirs:
+    image: alpine:latest
+    container_name: jellyfin-init
+    volumes:
+      - .:/workspace
+    command: |
+      sh -c '
+        mkdir -p /workspace/data/config
+        mkdir -p /workspace/data/cache
+        mkdir -p /workspace/data/media
+        mkdir -p /workspace/data/transcode
+        chown -R 1000:1000 /workspace/data
+        echo "Data directories created successfully"
+      '
+    depends_on: []
